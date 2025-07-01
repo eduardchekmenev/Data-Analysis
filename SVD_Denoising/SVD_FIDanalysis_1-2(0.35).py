@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 
+ppmadjust = 100  # ppm adjustment for frequency axis
+b1freq = 3.82882  # frequency in Hz for the 0.35T MRI scanner
+
 # --------------------------
 # Load FID data from CSV
 # --------------------------
@@ -20,7 +23,7 @@ def load_fid_data(file_path):
        - Column 3: Imaginary component
     """
     data = np.loadtxt(file_path, delimiter=',')
-    time_arr = data[:, 0] / 1000  # convert ms to seconds
+    time_arr = data[:, 0] / 1000000  # convert ms to seconds
     real_part = data[:, 1]
     imag_part = data[:, 2]
     fid = real_part + 1j * imag_part
@@ -171,16 +174,16 @@ def check_fft_validity(fid_segment, dt, T2_apod, phase_corr_angle, allowed_ppms,
     fft_plot_real = correct_baseline(fft_plot.real, 100)
     
     # Convert frequency axis (Hz) to chemical shift in ppm using your formula
-    ppm_axis = -((freqs_plot - (2500 - 639.08016399999997)) / 15.507665)
+    ppm_axis = -((freqs_plot) / b1freq) + ppmadjust
     
     # Condition 1: Check for negative peaks.
-    if np.min(fft_plot_real) < -8:
+    if np.min(fft_plot_real) < -5:
         print("Quality check failed: Negative peaks detected (min value = {:.4f}).".format(np.min(fft_plot_real)))
         return False
     
     # Condition 2: Check that all significant peaks lie within allowed ppm windows.
-    height_threshold = 0.25 #0.01 * np.max(fft_plot_real)
-    prominence_threshold = 0.02 * np.max(fft_plot_real)
+    height_threshold = 1 #0.01 * np.max(fft_plot_real)
+    prominence_threshold = 4 #0.02 * np.max(fft_plot_real)
     peaks, properties = find_peaks(fft_plot_real, height=height_threshold, prominence=prominence_threshold)
     if len(peaks) == 0:
         print("Quality check failed: No peaks found with height threshold {:.4f} and prominence threshold {:.4f}.".format(height_threshold, prominence_threshold))
@@ -208,7 +211,7 @@ def check_fft_validity(fid_segment, dt, T2_apod, phase_corr_angle, allowed_ppms,
             right_index += 1
         
         # Compute the integral over the region between the detected edges.
-        peak_integral = np.trapz(fft_plot_real[left_index:right_index+1], ppm_axis[left_index:right_index+1])
+        peak_integral = np.trapezoid(fft_plot_real[left_index:right_index+1], ppm_axis[left_index:right_index+1])
         print("Peak at {:.2f} ppm: height = {:.4f}, integral = {:.4f}".format(ppm_axis[peak_idx], peak_val, peak_integral))
         if peak_integral < integration_threshold:
             print("Quality check failed: Integrated area for peak at {:.2f} ppm is too low ({:.4f} < threshold {:.4f}).".format(ppm_axis[peak_idx], peak_integral, integration_threshold))
@@ -265,7 +268,7 @@ def plot_denoised_results(time, noisy_signal, denoised_signal, mode="fid"):
         fft_denoised_plot = correct_baseline(fft_denoised_plot.real, 100)
         
         # Convert frequency axis (Hz) to chemical shift in ppm using your formula:
-        ppm_axis = -((freqs_plot - (2500 - 639.08016399999997)) / 15.507665)
+        ppm_axis = -((freqs_plot) / b1freq) + ppmadjust
         
         plt.figure(figsize=(10, 5))
         plt.plot(ppm_axis, fft_noisy_plot, label="Noisy FFT (Real)", color="blue")
@@ -286,7 +289,7 @@ def plot_denoised_results(time, noisy_signal, denoised_signal, mode="fid"):
 def process_single_folder(folder, base_path,
                           L=2000, T2_apod=5, phase_corr_angle=10,
                           initial_k=4, allowed_ppms=None, ppm_threshold=1,
-                          target_length=65536, n_iter=2):
+                          target_length=8192, n_iter=2):
     """
     Process a single folder:
       - Loads the data,
@@ -484,12 +487,12 @@ def process_multiple_folders(start_folder, end_folder, base_path,
         fft_data_plot = fft_data_shifted[::-1]
         freqs_plot = freqs_shifted[::-1]
         # Convert frequency (Hz) to chemical shift (ppm).
-        ppm_axis = -((freqs_plot - (2500 - 639.08016399999997)) / 15.507665)
+        ppm_axis = -((freqs_plot) / b1freq) + ppmadjust
         signal = fft_data_plot.real
 
         # Identify peaks with a low threshold.
-        peak_threshold = 3 #0.005 * np.max(signal)
-        peak_prominence = 5 #0.01 * np.max(signal)
+        peak_threshold = 0.005 * np.max(signal)
+        peak_prominence = 0.01 * np.max(signal)
         peaks, _ = find_peaks(signal, height=peak_threshold, prominence=peak_prominence, distance=20)
         print(f"Folder {folder}: Detected {len(peaks)} peaks via find_peaks.")
 
@@ -637,7 +640,7 @@ def plot_denoised_on_ax(ax, new_time, noisy_processed, denoised_processed, mode,
         fft_noisy_plot = correct_baseline(fft_noisy_plot.real, 100)
         fft_denoised_plot = correct_baseline(fft_denoised_plot.real, 100)
         # Convert frequency axis (Hz) to chemical shift in ppm.
-        ppm_axis = -((freqs_plot - (2500 - 639.08016399999997)) / 15.507665)
+        ppm_axis = -((freqs_plot) / b1freq) + ppmadjust
         if plot_noisy_fft:
             ax.plot(ppm_axis, fft_noisy_plot, label="Noisy FFT (Real)", color="blue")
         ax.plot(ppm_axis, fft_denoised_plot, label="Denoised FFT (Real)", color="red")
@@ -769,8 +772,8 @@ def process_four_folders_plots(folder_list, base_path, mode="fid", save_plots=Fa
 # =============================================================================
 # For single folder processing (plots the results):
 
-# process_single_folder(folder=10, base_path=r"D:\WSU\Raw Data\MRI-0.35T\2025-05-01\phantom1", 
-#                       allowed_ppms=[0], n_iter=2, L=4000, initial_k=1, T2_apod=1.5, phase_corr_angle=10)
+process_single_folder(folder=2, base_path=r"D:\WSU\Animal data may 2025 visit\copy of the 13C data\2025-05-07-animal injection coil #9\animal05", 
+                      allowed_ppms=[98], n_iter=2, L=1000, initial_k=3, T2_apod=1, phase_corr_angle=75)
 # process_single_folder(folder=10, base_path=r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-04-03\250403-123410 7degCarbon-Cells (Pyr70_1)", 
 #                       allowed_ppms=[178, 176, 170, 160, 124], n_iter=2, L=4000, initial_k=7, T2_apod=1.5, phase_corr_angle=10)
 # process_single_folder(folder=15, base_path=r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-04-03\250403-164228 7degCarbon-Cells (KL70_1)", 
@@ -801,25 +804,6 @@ def process_four_folders_plots(folder_list, base_path, mode="fid", save_plots=Fa
 #                              tolerance=1,
 #                              output_csv=output_csv,
 #                              time_interval=3.5)
-
-# Pyruvate data processing
-if __name__ == '__main__':
-    # Base path where folder subdirectories (each containing fid.csv) reside.
-    base_path = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-06-10\250610-174216 7degCarbon-Cells (PYR70_5)"
-    # Full path (including CSV filename) where the integrated results should be saved.
-    output_csv = r"D:\WSU\2025-02 Pyruvate Cell Paper\Data Analysis\integrated_data_250610-174216_Run5.csv"
-
-    process_multiple_folders(start_folder=1, end_folder=150,
-                             base_path=base_path,
-                             n_threshold=2, initial_k=2, L=4000, T2_apod=1.5, phase_corr_angle=10,
-                             allowed_ppms=[178, 170, 160, 124],
-                             ppm_threshold=1, 
-                             target_length=65536, n_iter=2,
-                             target_peaks=[178, 170, 160, 124],
-                             metabolite_names=["hydrate", "pyruvate", "bicarbonate", "CO2"],
-                             tolerance=1,
-                             output_csv=output_csv,
-                             time_interval=3.5)
 
 # # Ketoleucine data processing
 # if __name__ == '__main__':

@@ -20,7 +20,7 @@ def load_fid_data(file_path):
        - Column 3: Imaginary component
     """
     data = np.loadtxt(file_path, delimiter=',')
-    time_arr = data[:, 0] / 1000  # convert ms to seconds
+    time_arr = data[:, 0] / 1e6  # convert ms to seconds
     real_part = data[:, 1]
     imag_part = data[:, 2]
     fid = real_part + 1j * imag_part
@@ -131,7 +131,7 @@ def correct_baseline(fft_data, n):
 # # ----------------------------------------------------
 # # FFT quality check function
 # # ----------------------------------------------------
-def check_fft_validity(fid_segment, dt, T2_apod, phase_corr_angle, allowed_ppms, ppm_threshold, target_length=65536, integration_threshold=0.01, edge_epsilon_ratio=0.001):
+def check_fft_validity(fid_segment, dt, T2_apod, phase_corr_angle, allowed_ppms, ppm_threshold, target_length=8192, integration_threshold=0.01, edge_epsilon_ratio=0.001):
     """
     Process the denoised FID segment and check the FFT for three types of artifacts:
       1. Negative peaks in the FFT.
@@ -171,10 +171,11 @@ def check_fft_validity(fid_segment, dt, T2_apod, phase_corr_angle, allowed_ppms,
     fft_plot_real = correct_baseline(fft_plot.real, 100)
     
     # Convert frequency axis (Hz) to chemical shift in ppm using your formula
-    ppm_axis = -((freqs_plot - (2500 - 639.08016399999997)) / 15.507665)
+    ppm_axis = freqs_plot / 3.828515
+    ppm_axis = ppm_axis[::-1]
     
     # Condition 1: Check for negative peaks.
-    if np.min(fft_plot_real) < -8:
+    if np.min(fft_plot_real) < -5:
         print("Quality check failed: Negative peaks detected (min value = {:.4f}).".format(np.min(fft_plot_real)))
         return False
     
@@ -265,7 +266,8 @@ def plot_denoised_results(time, noisy_signal, denoised_signal, mode="fid"):
         fft_denoised_plot = correct_baseline(fft_denoised_plot.real, 100)
         
         # Convert frequency axis (Hz) to chemical shift in ppm using your formula:
-        ppm_axis = -((freqs_plot - (2500 - 639.08016399999997)) / 15.507665)
+        ppm_axis = freqs_plot / 3.828515
+        ppm_axis = ppm_axis[::-1]
         
         plt.figure(figsize=(10, 5))
         plt.plot(ppm_axis, fft_noisy_plot, label="Noisy FFT (Real)", color="blue")
@@ -275,6 +277,8 @@ def plot_denoised_results(time, noisy_signal, denoised_signal, mode="fid"):
         plt.title("FFT of FID (Real Part)")
         plt.legend()
         plt.gca().invert_xaxis()  # Reverse x-axis direction
+        plt.xlim(40, -10)  # Set x-axis limits to match the original code
+        plt.ylim(-2, 15)  # Set y-axis limits to match the original code
         plt.show()
     else:
         raise ValueError("mode must be either 'fid' or 'fft'")
@@ -286,7 +290,7 @@ def plot_denoised_results(time, noisy_signal, denoised_signal, mode="fid"):
 def process_single_folder(folder, base_path,
                           L=2000, T2_apod=5, phase_corr_angle=10,
                           initial_k=4, allowed_ppms=None, ppm_threshold=1,
-                          target_length=65536, n_iter=2):
+                          target_length=16384, n_iter=2):
     """
     Process a single folder:
       - Loads the data,
@@ -363,7 +367,7 @@ def process_multiple_folders(start_folder, end_folder, base_path,
                              n_threshold, initial_k=4, L=2000,
                              T2_apod=5, phase_corr_angle=10,
                              allowed_ppms=None, ppm_threshold=1,
-                             target_length=65536, n_iter=2,
+                             target_length=16384, n_iter=2,
                              target_peaks=None, metabolite_names=None,
                              tolerance=1, output_csv=None, time_interval=3.5):
     """
@@ -484,7 +488,8 @@ def process_multiple_folders(start_folder, end_folder, base_path,
         fft_data_plot = fft_data_shifted[::-1]
         freqs_plot = freqs_shifted[::-1]
         # Convert frequency (Hz) to chemical shift (ppm).
-        ppm_axis = -((freqs_plot - (2500 - 639.08016399999997)) / 15.507665)
+        ppm_axis = freqs_plot / 3.828515
+        ppm_axis = ppm_axis[::-1]
         signal = fft_data_plot.real
 
         # Identify peaks with a low threshold.
@@ -637,11 +642,13 @@ def plot_denoised_on_ax(ax, new_time, noisy_processed, denoised_processed, mode,
         fft_noisy_plot = correct_baseline(fft_noisy_plot.real, 100)
         fft_denoised_plot = correct_baseline(fft_denoised_plot.real, 100)
         # Convert frequency axis (Hz) to chemical shift in ppm.
-        ppm_axis = -((freqs_plot - (2500 - 639.08016399999997)) / 15.507665)
+        ppm_axis = freqs_plot / 3.828515
+        ppm_axis = ppm_axis[::-1]
         if plot_noisy_fft:
             ax.plot(ppm_axis, fft_noisy_plot, label="Noisy FFT (Real)", color="blue")
         ax.plot(ppm_axis, fft_denoised_plot, label="Denoised FFT (Real)", color="red")
         ax.set_xlabel("Chemical Shift (ppm)")
+        ax.set_xlim(50, -20)  # Set x-axis limits for FFT
         ax.set_ylabel("Amplitude")
         ax.set_title(f"Folder {folder} - FFT")
         ax.legend()
@@ -688,7 +695,7 @@ def save_individual_plot(new_time, noisy_processed, denoised_processed, mode, fo
 def process_four_folders_plots(folder_list, base_path, mode="fid", save_plots=False, output_pdf_dir=None,
                                xlim=None, ylim=None, plot_noisy_fft=True,
                                L=2000, T2_apod=5, phase_corr_angle=10, initial_k=4,
-                               allowed_ppms=None, ppm_threshold=1, target_length=65536, n_iter=2):
+                               allowed_ppms=None, ppm_threshold=1, target_length=16384, n_iter=2):
     """
     Process FID data from four specified folders, plot each result as a subplot in a 2×2 grid,
     and optionally save each subplot as a PDF.
@@ -769,12 +776,12 @@ def process_four_folders_plots(folder_list, base_path, mode="fid", save_plots=Fa
 # =============================================================================
 # For single folder processing (plots the results):
 
-# process_single_folder(folder=10, base_path=r"D:\WSU\Raw Data\MRI-0.35T\2025-05-01\phantom1", 
-#                       allowed_ppms=[0], n_iter=2, L=4000, initial_k=1, T2_apod=1.5, phase_corr_angle=10)
+process_single_folder(folder=9, base_path=r"D:\WSU\Animal data may 2025 visit\copy of the 13C data\2025-05-07-animal injection coil #9\animal05", 
+                      allowed_ppms=[17, 30], n_iter=2, L=1200, initial_k=2, T2_apod=2, phase_corr_angle=-25)
 # process_single_folder(folder=10, base_path=r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-04-03\250403-123410 7degCarbon-Cells (Pyr70_1)", 
-#                       allowed_ppms=[178, 176, 170, 160, 124], n_iter=2, L=4000, initial_k=7, T2_apod=1.5, phase_corr_angle=10)
+#                       allowed_ppms=[178, 176, 170, 160, 124], n_iter=2, L=4000, initial_k=7, T2_apod=5, phase_corr_angle=10)
 # process_single_folder(folder=15, base_path=r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-04-03\250403-164228 7degCarbon-Cells (KL70_1)", 
-#                       allowed_ppms=[178, 176, 171, 160, 124], n_iter=2, L=4000, initial_k=7, T2_apod=1.5, phase_corr_angle=10)
+#                       allowed_ppms=[178, 176, 171, 160, 124], n_iter=2, L=4000, initial_k=7, T2_apod=5, phase_corr_angle=10)
 # process_single_folder(folder=20, base_path=r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-03-12\250312-121333 7degCarbon-Cells (Pyr_KIC_CoPol_Cells_001)", 
 #                       allowed_ppms=[178, 176, 171, 170, 160, 124], n_iter=2, L=4000, initial_k=8, T2_apod=1, phase_corr_angle=10)
 
@@ -792,34 +799,15 @@ def process_four_folders_plots(folder_list, base_path, mode="fid", save_plots=Fa
 
 #     process_multiple_folders(start_folder=1, end_folder=150,
 #                              base_path=base_path,
-#                              n_threshold=2, initial_k=2, L=4000, T2_apod=1.5, phase_corr_angle=10,
+#                              n_threshold=2, initial_k=2, L=4000, T2_apod=5, phase_corr_angle=10,
 #                              allowed_ppms=[178, 176, 170, 160, 124],
 #                              ppm_threshold=1, 
-#                              target_length=65536, n_iter=2,
+#                              target_length=16384, n_iter=2,
 #                              target_peaks=[178, 176, 171, 160, 124],
 #                              metabolite_names=["hydrate", "pyr-form", "pyruvate", "bicarbonate", "CO2"],
 #                              tolerance=1,
 #                              output_csv=output_csv,
 #                              time_interval=3.5)
-
-# Pyruvate data processing
-if __name__ == '__main__':
-    # Base path where folder subdirectories (each containing fid.csv) reside.
-    base_path = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-06-10\250610-174216 7degCarbon-Cells (PYR70_5)"
-    # Full path (including CSV filename) where the integrated results should be saved.
-    output_csv = r"D:\WSU\2025-02 Pyruvate Cell Paper\Data Analysis\integrated_data_250610-174216_Run5.csv"
-
-    process_multiple_folders(start_folder=1, end_folder=150,
-                             base_path=base_path,
-                             n_threshold=2, initial_k=2, L=4000, T2_apod=1.5, phase_corr_angle=10,
-                             allowed_ppms=[178, 170, 160, 124],
-                             ppm_threshold=1, 
-                             target_length=65536, n_iter=2,
-                             target_peaks=[178, 170, 160, 124],
-                             metabolite_names=["hydrate", "pyruvate", "bicarbonate", "CO2"],
-                             tolerance=1,
-                             output_csv=output_csv,
-                             time_interval=3.5)
 
 # # Ketoleucine data processing
 # if __name__ == '__main__':
@@ -830,10 +818,10 @@ if __name__ == '__main__':
 
 #     process_multiple_folders(start_folder=1, end_folder=150,
 #                              base_path=base_path,
-#                              n_threshold=3, initial_k=7, L=4000, T2_apod=1.5, phase_corr_angle=10,
+#                              n_threshold=3, initial_k=7, L=4000, T2_apod=5, phase_corr_angle=10,
 #                              allowed_ppms=[178, 176, 171, 160, 124],
 #                              ppm_threshold=1, 
-#                              target_length=65536, n_iter=2,
+#                              target_length=16384, n_iter=2,
 #                              target_peaks=[178, 176, 171, 160, 124],
 #                              metabolite_names=["hydrate", "kl-form", "ketoleucine", "bicarbonate", "CO2"],
 #                              tolerance=1,
@@ -849,10 +837,10 @@ if __name__ == '__main__':
 
 #     process_multiple_folders(start_folder=1, end_folder=150,
 #                              base_path=base_path,
-#                              n_threshold=3, initial_k=8, L=4000, T2_apod=1.5, phase_corr_angle=10,
+#                              n_threshold=3, initial_k=8, L=4000, T2_apod=5, phase_corr_angle=10,
 #                              allowed_ppms=[178, 171, 170, 160, 124],
 #                              ppm_threshold=1, 
-#                              target_length=65536, n_iter=2,
+#                              target_length=16384, n_iter=2,
 #                              target_peaks=[178.8, 178.2, 171.2, 170.2, 160.3, 124.8],
 #                              metabolite_names=["pyv_hydrate", "kl_hydrate", "ketoleucine", "pyruvate", "bicarbonate", "CO2"],
 #                              tolerance=0.3,
@@ -876,5 +864,5 @@ if __name__ == '__main__':
 
 # process_four_folders_plots(folder_numbers, base_path, mode="fft", save_plots=True, output_pdf_dir=output_dir,
 #                            xlim=x_axis_limits, ylim=y_axis_limits, plot_noisy_fft=False,
-#                            L=4000, T2_apod=1.5, phase_corr_angle=10, initial_k=8,
-#                            allowed_ppms=[178, 171, 170, 160, 124], ppm_threshold=1, target_length=65536, n_iter=2)
+#                            L=4000, T2_apod=5, phase_corr_angle=10, initial_k=8,
+#                            allowed_ppms=[178, 171, 170, 160, 124], ppm_threshold=1, target_length=16384, n_iter=2)
