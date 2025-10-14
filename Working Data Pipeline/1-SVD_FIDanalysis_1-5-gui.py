@@ -344,9 +344,13 @@ class FolderOverridesDialog(QDialog):
             # time_interval default from preset
             self.table.setItem(row, 3, QTableWidgetItem(f"{self.default_time_interval:.3f}"))
 
-            # output_name suggestion from folder name
-            self.table.setItem(row, 4, QTableWidgetItem(re.sub(r"[^\w\-.]+", "_", name)))
-
+            # output_name in downstream-compatible format: integrated_data_<YYYYMMDD-HHMM> (<RUN_ID>)
+            m_ts = re.search(r"(\d{6}-\d{6})", name)
+            timestamp = m_ts.group(1) if m_ts else "unknown"
+            m_run = re.search(r"\(([^)]+)\)", name)
+            run_id = m_run.group(1) if m_run else "RUN"
+            output_default = f"integrated_data_{timestamp} ({run_id})"
+            self.table.setItem(row, 4, QTableWidgetItem(output_default))
 
         layout.addWidget(self.table)
 
@@ -772,14 +776,21 @@ class MainWindow(QMainWindow):
         if not self.specs:
             # If user skipped overrides, generate simple defaults
             default_ti = float(self.current_params.get("default_time_interval", 3.5))
-            self.specs = [
-                FolderRunSpec(
-                    base_path=p, start_folder=1, end_folder=200,
-                    time_interval=default_ti,
-                    output_name=re.sub(r"[^\w\-.]+", "_", os.path.basename(os.path.normpath(p)))
+            self.specs = []
+            for p in self.selected_paths:
+                base = os.path.basename(os.path.normpath(p))
+                m_ts = re.search(r"(\d{6}-\d{6})", base)
+                timestamp = m_ts.group(1) if m_ts else "unknown"
+                m_run = re.search(r"\(([^)]+)\)", base)
+                run_id = m_run.group(1) if m_run else "RUN"
+                output_name = f"integrated_data_{timestamp} ({run_id})"
+                self.specs.append(
+                    FolderRunSpec(
+                        base_path=p, start_folder=1, end_folder=200,
+                        time_interval=default_ti,
+                        output_name=output_name
+                    )
                 )
-                for p in self.selected_paths
-            ]
             self.append_selection_log("[Info] Using default per-folder overrides.")
 
         # # Ask for a session-level output_name used for PARAMETERS.txt root
