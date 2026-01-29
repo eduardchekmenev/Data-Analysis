@@ -31,16 +31,16 @@ import pandas as pd
 
 # ---------- Defaults (you can change these) ----------
 DEFAULT_START = 1
-DEFAULT_END = 200
-DEFAULT_WINDOW = 5
+DEFAULT_END = 150
+DEFAULT_WINDOW = 10
 ABS_TOL_MS = 1e-9  # time-axis equality tolerance in ms
 INPUT_FILENAME = "fid.csv"
 OUTPUT_FILENAME = "fid.csv"  # headerless
 LOG_NAME = "rolling_average_log.txt"
 
 # If you prefer not to use pickers, set these to absolute paths and they'll be used.
-HARDCODED_BASE = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-09-19\250919-171708 7degCarbon-Cells (PYR70_6)"
-HARDCODED_OUTPUT = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-09-19\250919-171708 7degCarbon-Cells (PYR70_6)avg"
+HARDCODED_BASE = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-12-01\251201-102143 7degCarbon-Cells (PYR35-1)"
+HARDCODED_OUTPUT = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-12-01\251201-102143 7degCarbon-Cells (PYR35-1)rolling_avg_output"
 # -----------------------------------------------------
 
 

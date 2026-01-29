@@ -109,7 +109,7 @@ def main():
 
 if __name__ == "__main__":
     # === USER CONFIG (edit these) ===
-    base = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-09-12\250912-105727 7degCarbon-Cells (Acetic acid)"
+    base = r"D:\WSU\Raw Data\Jing's data_13C\2025-12-02\251202-144243 Carbon (ref wait for T1)"
     folders = None          # e.g. [1, 5, 10] for specific runs
     start, end = 1, 2     # Range of folders to process if folders=None
     verbose = True

@@ -108,6 +108,6 @@ def interactive_plot(time, fid_avg):
     plt.show()
 
 if __name__ == "__main__":
-    basepath = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-09-12\250912-173908 7degCarbon-Cells (Pyr_4)"
-    time, fid_avg = sum_average_fids(basepath, n_folders=10)
+    basepath = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-10-24\251024-112402 7degCarbon-Cells (PYR8.75_1)"
+    time, fid_avg = sum_average_fids(basepath, n_folders=100)
     interactive_plot(time, fid_avg)

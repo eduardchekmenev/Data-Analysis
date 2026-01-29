@@ -200,7 +200,7 @@ class AnalysisGUI(QWidget):
         # --- Time cutoff input
         cutoff_layout = QHBoxLayout()
         cutoff_layout.addWidget(QLabel("Time cutoff (s):"))
-        self.time_cutoff_input = QLineEdit("60.0")
+        self.time_cutoff_input = QLineEdit("80.0")
         cutoff_layout.addWidget(self.time_cutoff_input)
         self.layout.addLayout(cutoff_layout)
 

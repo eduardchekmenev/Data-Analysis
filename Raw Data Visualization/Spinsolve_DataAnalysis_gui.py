@@ -90,6 +90,7 @@ class MainWindow(QMainWindow):
         self.phase_offsets = []
         self.figs = []
         self.current = 0
+        self.transient_numbers = []
         self.init_ui()
 
     def init_ui(self):
@@ -182,6 +183,7 @@ class MainWindow(QMainWindow):
         self.data.clear()
         self.phase_offsets.clear()
         self.figs.clear()
+        self.transient_numbers.clear()
         self.current = 0
         mode = self.mode_combo.currentText()
         try:
@@ -193,34 +195,45 @@ class MainWindow(QMainWindow):
             ppm_stop = self.ppm_stop.value()
 
             folder = os.path.join(base, date)
+
             if mode == "Multi-Experiment":
-                for d in os.listdir(folder):
-                    if name in d:
-                        fid_path = os.path.join(folder, d, "1", "fid.csv")
+                # Deterministic, lexicographic order over timestamped experiment folders
+                matching = sorted(d for d in os.listdir(folder) if name in d)
+                for d in matching:
+                    fid_path = os.path.join(folder, d, "1", "fid.csv")
+                    if os.path.isfile(fid_path):
+                        fid, time = read_fid_csv(fid_path)
+                        self.data.append((fid, time))
+                        self.phase_offsets.append(0)
+                        fig = process_and_plot(fid, time, lb, 0, ppm_start, ppm_stop)
+                        self.figs.append(fig)
+
+            else:  # Multi-Transient
+                # Choose the target timestamp folder deterministically
+                matching_folders = sorted(d for d in os.listdir(folder) if name in d)
+                if not matching_folders:
+                    raise ValueError("No folder found matching experiment name.")
+                timestamp_folder = os.path.join(folder, matching_folders[0])
+
+                transient_start = int(self.transient_start.text())
+                transient_stop = int(self.transient_stop.text())
+
+                # STRICT numeric ordering of subfolders
+                numeric_subs = sorted(
+                    int(s) for s in os.listdir(timestamp_folder) if s.isdigit()
+                )
+
+                for sub_num in numeric_subs:
+                    if transient_start <= sub_num <= transient_stop:
+                        fid_path = os.path.join(timestamp_folder, str(sub_num), "fid.csv")
                         if os.path.isfile(fid_path):
                             fid, time = read_fid_csv(fid_path)
                             self.data.append((fid, time))
                             self.phase_offsets.append(0)
+                            self.transient_numbers.append(sub_num)  # track actual folder number
                             fig = process_and_plot(fid, time, lb, 0, ppm_start, ppm_stop)
                             self.figs.append(fig)
-            else:  # Multi-Transient
-                matching_folders = [d for d in os.listdir(folder) if name in d]
-                if not matching_folders:
-                    raise ValueError("No folder found matching experiment name.")
-                timestamp_folder = os.path.join(folder, matching_folders[0])
-                transient_start = int(self.transient_start.text())
-                transient_stop = int(self.transient_stop.text())
-                for sub in sorted(os.listdir(timestamp_folder)):
-                    if sub.isdigit():
-                        sub_num = int(sub)
-                        if transient_start <= sub_num <= transient_stop:
-                            fid_path = os.path.join(timestamp_folder, sub, "fid.csv")
-                            if os.path.isfile(fid_path):
-                                fid, time = read_fid_csv(fid_path)
-                                self.data.append((fid, time))
-                                self.phase_offsets.append(0)
-                                fig = process_and_plot(fid, time, lb, 0, ppm_start, ppm_stop)
-                                self.figs.append(fig)
+
             self.update_canvas()
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
@@ -250,18 +263,25 @@ class MainWindow(QMainWindow):
         self.canvas.draw()
 
         mode = self.mode_combo.currentText()
+        base = self.path_edit.text()
+        date = self.date_edit.text()
+        name = self.name_edit.text()
+        folder = os.path.join(base, date)
+
         if mode == "Multi-Experiment":
-            base = self.path_edit.text()
-            date = self.date_edit.text()
-            name = self.name_edit.text()
-            folder = os.path.join(base, date)
-            matching = [d for d in os.listdir(folder) if name in d]
+            # Ensure the label uses the same deterministic order as run()
+            matching = sorted(d for d in os.listdir(folder) if name in d)
             if self.current < len(matching):
                 self.status_label.setText(f"Timestamp: {matching[self.current]} | Transient: 1")
+            else:
+                self.status_label.setText("Timestamp: N/A | Transient: 1")
         else:
-            start = int(self.transient_start.text())
-            subfolder = start + self.current
-            self.status_label.setText(f"Timestamp: Fixed | Transient: {subfolder}")
+            # Use the actual folder number from the numeric sort
+            if self.current < len(self.transient_numbers):
+                subfolder_num = self.transient_numbers[self.current]
+                self.status_label.setText(f"Timestamp: Fixed | Transient: {subfolder_num}")
+            else:
+                self.status_label.setText("Timestamp: Fixed | Transient: N/A")
 
     def show_next(self):
         if self.current < len(self.data) - 1:

@@ -49,13 +49,13 @@ x_display_max = 400
 class TwoSiteConfig:
     allow_curve_scales: bool = True  # allow separate sP, sL amplitude scales in the fit
     # Bounds (physiology/sequence-guided)
-    kpl_bounds: Tuple[float, float] = (0.00001, 0.02)         # s^-1
+    kpl_bounds: Tuple[float, float] = (0.00001, 0.05)         # s^-1
     Rp_eff_bounds: Tuple[float, float] = (0.015, 0.07)    # s^-1  (Rp_eff = 1/T1p + kpl)
     Rl_bounds: Tuple[float, float] = (0.01, 0.2)        # s^-1  (~25-100 s T1-like)
     tinj_extra_hi: float = 30.0                          # allow +30 s above raw first time
     # Control whether t_inj is fixed or fitted
-    fit_tinj: bool = True                  # <— set False to hard-code
-    fixed_tinj_value: float = 16.0          # <— your chosen global t_inj (seconds)
+    fit_tinj: bool = False                  # <— set False to hard-code
+    fixed_tinj_value: float = 8.0          # <— your chosen global t_inj (seconds)
     # Amplitude scale bounds (if used)
     sP_bounds: Tuple[float, float] = (1.8, 2.2)   # <- EDIT as you like (must be >0)
     sL_bounds: Tuple[float, float] = (0.6, 0.65)

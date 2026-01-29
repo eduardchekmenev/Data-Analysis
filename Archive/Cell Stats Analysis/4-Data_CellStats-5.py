@@ -246,13 +246,14 @@ class DataImporter(QWidget):
                         # Apply metric-specific normalization
                         if entry["metric_num"] == 1:
                             # Metric 1 (Lac): imported / (pol * (cell / 1e6))
-                            norm_val = imported / (pol * (cell / 1e6))
+                            # norm_val = imported / (pol * (cell / 1e6))
+                            norm_val = imported / (pol * cell / 1e7)
                         elif entry["metric_num"] == 2:
                             # Metric 2 (kPL): imported / (cell / 1e6)
-                            norm_val = imported / (cell / 1e6)
+                            norm_val = imported / (cell / 1e7)
                         else:
                             # Default fallback (in case more metrics are added)
-                            norm_val = imported / (cell * pol / 1e6)
+                            norm_val = imported / (pol * cell / 1e7)
                         data_type = "normalized"
                     else:
                         norm_val = imported
