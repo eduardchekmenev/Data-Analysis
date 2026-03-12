@@ -39,8 +39,8 @@ OUTPUT_FILENAME = "fid.csv"  # headerless
 LOG_NAME = "rolling_average_log.txt"
 
 # If you prefer not to use pickers, set these to absolute paths and they'll be used.
-HARDCODED_BASE = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-12-01\251201-102143 7degCarbon-Cells (PYR35-1)"
-HARDCODED_OUTPUT = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2025-12-01\251201-102143 7degCarbon-Cells (PYR35-1)rolling_avg_output"
+HARDCODED_BASE = r"D:\WSU\Raw Data\Spinsolve-1.4T_13C\2026-02-19\260219-103744 7degCarbon-Cells (PYR70_2)"
+HARDCODED_OUTPUT = r"C:\Users\pmtom\Downloads"
 # -----------------------------------------------------
 
 

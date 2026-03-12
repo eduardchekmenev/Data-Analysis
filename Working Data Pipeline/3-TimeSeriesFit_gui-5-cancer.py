@@ -51,7 +51,7 @@ class TwoSiteConfig:
 
     # ---------- NEW FIELD ----------
     # Reasonable physiological limits: T1p in [5 s, 120 s]
-    T1p_bounds_s: Tuple[float, float] = (90.0, 110.0)
+    T1p_bounds_s: Tuple[float, float] = (50.0, 110.0)
 
     auc_tmin_s: float = 10.0
     auc_tmax_s: float = 90.0

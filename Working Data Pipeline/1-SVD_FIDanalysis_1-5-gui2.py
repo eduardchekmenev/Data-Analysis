@@ -186,7 +186,7 @@ PRESETS = {
         "n_iter": 2,
         "target_peaks": [182.5, 178, 170, 160, 124],
         "metabolite_names": ["lactate", "hydrate", "pyruvate", "bicarbonate", "CO2"],
-        "tolerance": 1.0,
+        "tolerance": 1.5,
         "save_per_folder": True,
         # learning parameter from your function signature:
         "n_threshold": 3,  # used only if your in-file learning logic refers to it
@@ -208,7 +208,7 @@ PRESETS = {
         "n_iter": 2,
         "target_peaks": [182.5, 178.3, 173.2, 171.3, 170.2, 160, 124],
         "metabolite_names": ["lactate","hydrate","unk1", "ketoleucine", "unk2", "bicarbonate","CO2"],
-        "tolerance": 1.0,
+        "tolerance": 1.5,
         "save_per_folder": True,
         "n_threshold": 2,
         "default_time_interval": 2.5,
@@ -228,7 +228,7 @@ PRESETS = {
         "n_iter": 2,
         "target_peaks": [182.5, 178.6, 178.3, 173, 171, 170],
         "metabolite_names": ["lactate", "pyrhydrate", "klhydrate", "unk1", "ketoleucine", "pyruvate"],
-        "tolerance": 1.0,
+        "tolerance": 1.5,
         "save_per_folder": True,
         "n_threshold": 2,
         "default_time_interval": 2.5,
