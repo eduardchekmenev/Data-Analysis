@@ -207,7 +207,7 @@ class AnalysisGUI(QWidget):
         # --- Metabolite input ---
         metab_layout = QHBoxLayout()
         metab_layout.addWidget(QLabel("Metabolites (comma-separated):"))
-        self.metabolite_input = QLineEdit("pyruvate, CO2, bicarbonate")
+        self.metabolite_input = QLineEdit("lactate, pyruvate, CO2, bicarbonate")
         self.metabolite_input.setPlaceholderText("e.g., lactate, pyruvate, bicarbonate, CO2")
         metab_layout.addWidget(self.metabolite_input)
         self.layout.addLayout(metab_layout)
