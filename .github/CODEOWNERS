@@ -1,0 +1,11 @@
+# CODEOWNERS
+#
+# Syntax: <path pattern>  <owner(s)>
+# Owners are notified of PRs touching their paths and must approve before merge.
+# Rules are matched top-to-bottom; the last matching rule wins.
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Locked pipeline folders — only the repo owner may approve changes
+"Working Data Pipeline/"  @ptomhon
+"Raw Data Visualization/" @ptomhon
