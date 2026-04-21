@@ -7,6 +7,6 @@
 # Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Locked pipeline folders — only the repo owner may approve changes
-"Working Data Pipeline/"  @ptomhon
-"Raw Data Visualization/" @ptomhon
+/working_data_pipeline/  @ptomhon
+/raw_data_visualization/ @ptomhon
 README.md @ptomhon
